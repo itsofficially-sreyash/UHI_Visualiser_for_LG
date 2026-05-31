@@ -1,90 +1,38 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
+import 'package:uhi_visualiser/constants/env.dart';
+import 'providers/city_provider.dart';
+import 'screens/city_list_screen.dart';
 
-void main() {
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (e) {
+    debugPrint('No .env file found; continuing without env vars.');
+  }
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'UHI Visualizer',
-      home: const CityListScreen(),
-    );
-  }
-}
-
-class CityListScreen extends StatelessWidget {
-  const CityListScreen({super.key});
-
-  final List<Map<String, dynamic>> cities = const [
-    {'name': 'Pune', 'lat': 18.5204, 'lon': 73.8567},
-    {'name': 'Delhi', 'lat': 28.6139, 'lon': 77.2090},
-    {'name': 'Mumbai', 'lat': 19.0760, 'lon': 72.8777},
-  ];
-
-  String generateKML(String cityName, double lat, double lon) {
-    return '''<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
-  <Document>
-    <name>$cityName Heat Map</name>
-    <Placemark>
-      <name>$cityName</name>
-      <Point>
-        <coordinates>$lon,$lat,0</coordinates>
-      </Point>
-    </Placemark>
-    <GroundOverlay>
-      <name>$cityName Heatmap</name>
-      <color>660000ff</color>
-      <LatLonBox>
-        <north>${lat + 0.2}</north>
-        <south>${lat - 0.2}</south>
-        <east>${lon + 0.2}</east>
-        <west>${lon - 0.2}</west>
-      </LatLonBox>
-    </GroundOverlay>
-  </Document>
-</kml>''';
-  }
-
-  Future<void> saveAndOpenKML(BuildContext context, String cityName, double lat, double lon) async {
-    final kml = generateKML(cityName, lat, lon);
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/uhi_$cityName.kml');
-    await file.writeAsString(kml);
-    debugPrint('KML saved to: ${file.path}');
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('KML saved! Open in Google Earth: ${file.path}')),
-      );
-    }
-  }
+  // Replace with your actual key for now
+  static final apiKey = Env.geminiApiKey;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('UHI Visualizer')),
-      body: ListView.builder(
-        itemCount: cities.length,
-        itemBuilder: (context, index) {
-          final city = cities[index];
-          return ListTile(
-            title: Text(city['name']),
-            trailing: const Icon(Icons.thermostat, color: Colors.red),
-            onTap: () => saveAndOpenKML(
-              context,
-              city['name'],
-              city['lat'],
-              city['lon'],
-            ),
-          );
-        },
+    return ChangeNotifierProvider(
+      create: (_) => CityProvider(apiKey),
+      child: MaterialApp(
+        title: 'UHI Visualizer',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
+          useMaterial3: true,
+        ),
+        home: CityListScreen(),
       ),
     );
   }
