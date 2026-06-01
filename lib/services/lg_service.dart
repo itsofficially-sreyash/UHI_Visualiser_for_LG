@@ -8,7 +8,7 @@ class LgService {
   final int port;
   final String username;
   // final String privateKey;
-  final String password;  
+  final String password;
   final int screenCount;
 
   LgService({
@@ -56,20 +56,27 @@ class LgService {
     if (_client == null) return;
 
     try {
-      final kml =
-          '''
-<LookAt>
-  <longitude>$lon</longitude>
-  <latitude>$lat</latitude>
-  <altitude>0</altitude>
-  <range>$altitude</range>
-  <tilt>0</tilt>
-  <heading>0</heading>
-  <altitudeMode>relativeToGround</altitudeMode>
-</LookAt>
-''';
+      final flyToKml =
+          '''<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <Placemark>
+      <LookAt>
+        <longitude>$lon</longitude>
+        <latitude>$lat</latitude>
+        <altitude>0</altitude>
+        <range>$altitude</range>
+        <tilt>0</tilt>
+        <heading>0</heading>
+        <altitudeMode>relativeToGround</altitudeMode>
+      </LookAt>
+    </Placemark>
+  </Document>
+</kml>''';
 
-      await _client!.run("echo '$kml' > /tmp/flyto.kml");
+      final escaped = flyToKml.replaceAll("'", "'\\''");
+      await _client!.run("echo '$escaped' > /var/www/html/kml/flyto.kml");
+      print('FlyTo KML pushed');
     } catch (e) {
       print('FlyTo failed: $e');
     }
