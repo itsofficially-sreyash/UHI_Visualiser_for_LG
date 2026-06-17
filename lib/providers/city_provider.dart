@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:uhi_visualiser/models/city.dart';
@@ -19,51 +17,80 @@ class CityProvider extends ChangeNotifier {
   String heatStory = '';
   String kmlPath = '';
   bool isLoading = false;
+  bool isConnected = false;
+  bool isSpeaking = false;
+  String? errorMessage;
 
   CityProvider(String apiKey) : _gemini = GeminiService(apiKey) {
     lgService = LgService(
-      host: '10.81.90.240',
+      host: '192.168.224.64',
       username: dotenv.env['LG_USERNAME']!,
       password: dotenv.env['LG_PASSWORD']!,
     );
   }
 
   Future<void> selectCity(City city) async {
+    // Stop any ongoing narration when switching cities
+    if (isSpeaking) {
+      await _tts.stop();
+      isSpeaking = false;
+    }
+
     selectedCity = city;
     isLoading = true;
     heatStory = '';
+    errorMessage = null;
     notifyListeners();
 
+    // Attempt LG connection
     final connected = await lgService.connect();
-    print('SSH connected: $connected');
+    isConnected = connected;
+    if (!connected) {
+      errorMessage = 'LG rig not reachable — narration only mode.';
+    }
+    notifyListeners();
 
-    //generating kml and fetching story in parallel
-    final results = await Future.wait([
-      _kml.saveKML(city),
-      _gemini.getCityHeatStory(city.name),
-    ]);
+    // Generate KML and fetch Gemini story in parallel
+    try {
+      final results = await Future.wait([
+        _kml.saveKML(city),
+        _gemini.getCityHeatStory(city.name),
+      ]);
+      kmlPath = results[0];
+      heatStory = results[1];
+    } catch (e) {
+      errorMessage = 'Failed to load city data. Please try again.';
+      heatStory = '';
+    }
 
-    kmlPath = results[0];
-    heatStory = results[1];
     isLoading = false;
     notifyListeners();
 
-    //push kml via ssh
-    if (connected) {
-      final kmlContent = _kml.generateHeatmapKML(city);
-      await lgService.sendKML(kmlContent);
-      print('KML pushed via SSH');
-
-      //fly to that city
-      await lgService.flyTo(city.lat, city.lon, 50000);
-      print('FlyTo triggered');
+    // Push KML and fly only if connected
+    if (connected && heatStory.isNotEmpty) {
+      try {
+        final kmlContent = _kml.generateHeatmapKML(city);
+        await lgService.sendKML(kmlContent);
+        await lgService.flyTo(city.lat, city.lon, 50000);
+        debugPrint('KML pushed + FlyTo triggered');
+      } catch (e) {
+        debugPrint('KML push failed: $e');
+      }
     }
 
-    await _tts.speak(heatStory);
+    // Start TTS narration
+    if (heatStory.isNotEmpty) {
+      isSpeaking = true;
+      notifyListeners();
+      await _tts.speak(heatStory);
+      isSpeaking = false;
+      notifyListeners();
+    }
   }
 
   Future<void> stopNarration() async {
     await _tts.stop();
+    isSpeaking = false;
+    notifyListeners();
   }
 }
-  // final _privateKey = await File('home/sreyash/.ssh/lg_key').readAsString();

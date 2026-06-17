@@ -4,8 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:uhi_visualiser/constants/env.dart';
 import 'providers/city_provider.dart';
 import 'screens/city_list_screen.dart';
+import 'theme/app_theme.dart';
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await dotenv.load(fileName: '.env');
@@ -18,7 +19,6 @@ void main() async{
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // Replace with your actual key for now
   static final apiKey = Env.geminiApiKey;
 
   @override
@@ -28,11 +28,8 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'UHI Visualizer',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
-          useMaterial3: true,
-        ),
-        home: CityListScreen(),
+        theme: AppTheme.dark(),
+        home: const CityListScreen(),
       ),
     );
   }
