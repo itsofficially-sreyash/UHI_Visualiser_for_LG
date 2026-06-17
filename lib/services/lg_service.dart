@@ -23,6 +23,7 @@ class LgService {
   //connect to lg master or localhost
   Future<bool> connect() async {
     try {
+      debugPrint('Connecting to LG SSH at $host:$port');
       final socket = await SSHSocket.connect(host, port);
       _client = SSHClient(
         socket,
