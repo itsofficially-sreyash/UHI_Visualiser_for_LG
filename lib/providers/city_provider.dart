@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:uhi_visualiser/models/city.dart';
-import 'package:uhi_visualiser/services/gemini_service.dart';
-import 'package:uhi_visualiser/services/kml_service.dart';
-import 'package:uhi_visualiser/services/lg_service.dart';
-import 'package:uhi_visualiser/services/tts_service.dart';
+import '../models/city.dart';
+import '../models/lg_settings.dart';
+import '../services/gemini_service.dart';
+import '../services/kml_service.dart';
+import '../services/lg_service.dart';
+import '../services/settings_service.dart';
+import '../services/tts_service.dart';
 
 class CityProvider extends ChangeNotifier {
   final GeminiService _gemini;
   final KMLService _kml = KMLService();
   final TTSService _tts = TTSService();
+  final SettingsService _settingsService = SettingsService();
 
-  late final LgService lgService;
+  LGService? lgService;
+  LgSettings? currentSettings;
 
   City? selectedCity;
   String heatStory = '';
@@ -22,15 +25,29 @@ class CityProvider extends ChangeNotifier {
   String? errorMessage;
 
   CityProvider(String apiKey) : _gemini = GeminiService(apiKey) {
-    lgService = LgService(
-      host: '192.168.224.64',
-      username: dotenv.env['LG_USERNAME']!,
-      password: dotenv.env['LG_PASSWORD']!,
+    _initLgService();
+  }
+
+  Future<void> _initLgService() async {
+    final settings = await _settingsService.load();
+    currentSettings = settings;
+    lgService = LGService(
+      host: settings.host,
+      port: settings.port,
+      username: settings.username,
+      password: settings.password,
+      screenCount: settings.screenCount,
     );
+    notifyListeners();
+  }
+
+  Future<void> reloadLgService() async {
+    await _initLgService();
   }
 
   Future<void> selectCity(City city) async {
-    // Stop any ongoing narration when switching cities
+    if (lgService == null) return;
+
     if (isSpeaking) {
       await _tts.stop();
       isSpeaking = false;
@@ -42,15 +59,13 @@ class CityProvider extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
 
-    // Attempt LG connection
-    final connected = await lgService.connect();
+    final connected = await lgService!.connect();
     isConnected = connected;
     if (!connected) {
       errorMessage = 'LG rig not reachable — narration only mode.';
     }
     notifyListeners();
 
-    // Generate KML and fetch Gemini story in parallel
     try {
       final results = await Future.wait([
         _kml.saveKML(city),
@@ -66,19 +81,17 @@ class CityProvider extends ChangeNotifier {
     isLoading = false;
     notifyListeners();
 
-    // Push KML and fly only if connected
     if (connected && heatStory.isNotEmpty) {
       try {
         final kmlContent = _kml.generateHeatmapKML(city);
-        await lgService.sendKML(kmlContent);
-        await lgService.flyTo(city.lat, city.lon, 50000);
+        await lgService!.sendKML(kmlContent);
+        await lgService!.flyTo(city.lat, city.lon, 50000);
         debugPrint('KML pushed + FlyTo triggered');
       } catch (e) {
         debugPrint('KML push failed: $e');
       }
     }
 
-    // Start TTS narration
     if (heatStory.isNotEmpty) {
       isSpeaking = true;
       notifyListeners();
