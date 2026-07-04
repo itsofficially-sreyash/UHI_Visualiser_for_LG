@@ -1,7 +1,7 @@
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter/widgets.dart';
 
-class LgService {
+class LGService {
   SSHClient? _client;
 
   final String host;
@@ -11,7 +11,7 @@ class LgService {
   final String password;
   final int screenCount;
 
-  LgService({
+  LGService({
     required this.host,
     this.port = 22,
     required this.username,
@@ -31,7 +31,7 @@ class LgService {
         onPasswordRequest: () => password,
       );
       final result = await _client!.run('echo connected');
-      print('SSH auth test: ${String.fromCharCodes(result)}');
+      debugPrint('SSH auth test: ${String.fromCharCodes(result)}');
       return true;
     } catch (e) {
       debugPrint('SSH connection failed: $e');
@@ -48,7 +48,7 @@ class LgService {
       final escaped = kmlContent.replaceAll("'", "'\\''");
       await _client!.run("echo '$escaped' > /var/www/html/kml/master.kml");
     } catch (e) {
-      print('KML push failed: $e');
+      debugPrint('KML push failed: $e');
     }
   }
 
@@ -77,9 +77,9 @@ class LgService {
 
       final escaped = flyToKml.replaceAll("'", "'\\''");
       await _client!.run("echo '$escaped' > /var/www/html/kml/flyto.kml");
-      print('FlyTo KML pushed');
+      debugPrint('FlyTo KML pushed');
     } catch (e) {
-      print('FlyTo failed: $e');
+      debugPrint('FlyTo failed: $e');
     }
   }
 
@@ -88,7 +88,7 @@ class LgService {
     try {
       await _client!.run("echo '' > /var/www/html/kml/master.kml");
     } catch (e) {
-      print('Clear failed: $e');
+      debugPrint('Clear failed: $e');
     }
   }
 
