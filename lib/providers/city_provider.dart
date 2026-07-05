@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uhi_visualiser/services/geocoding_service.dart';
 import '../models/city.dart';
 import '../models/lg_settings.dart';
 import '../services/gemini_service.dart';
@@ -12,6 +13,7 @@ class CityProvider extends ChangeNotifier {
   final KMLService _kml = KMLService();
   final TTSService _tts = TTSService();
   final SettingsService _settingsService = SettingsService();
+  final GeocodingService _geocoding = GeocodingService();
 
   LGService? lgService;
   LgSettings? currentSettings;
@@ -23,6 +25,8 @@ class CityProvider extends ChangeNotifier {
   bool isConnected = false;
   bool isSpeaking = false;
   String? errorMessage;
+  List<City> searchResults = [];
+  bool isSearching = false;
 
   CityProvider(String apiKey) : _gemini = GeminiService(apiKey) {
     _initLgService();
@@ -104,6 +108,25 @@ class CityProvider extends ChangeNotifier {
   Future<void> stopNarration() async {
     await _tts.stop();
     isSpeaking = false;
+    notifyListeners();
+  }
+
+  Future<void> searchCity(String query) async {
+    if (query.trim().isEmpty) {
+      searchResults = [];
+      notifyListeners();
+      return;
+    }
+
+    isSearching = true;
+    notifyListeners();
+    searchResults = await _geocoding.searchCity(query);
+    isSearching = false;
+    notifyListeners();
+  }
+
+  void clearSearch() {
+    searchResults = [];
     notifyListeners();
   }
 }

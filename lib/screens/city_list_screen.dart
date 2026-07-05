@@ -113,6 +113,31 @@ class _CityListScreenState extends State<CityListScreen> {
             child: Container(height: 1, color: AppColors.divider),
           ),
           const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: 'Search any city...',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+              onChanged: (query) =>
+                  context.read<CityProvider>().searchCity(query),
+            ),
+          ),
+
+          if (provider.searchResults.isNotEmpty)
+            ...provider.searchResults.map(
+              (city) => ListTile(
+                title: Text(city.name),
+                trailing: const Icon(Icons.thermostat, color: Colors.red),
+                onTap: () {
+                  provider.clearSearch();
+                  provider.selectCity(city);
+                },
+              ),
+            ),
 
           // City cards list
           Expanded(
