@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:uhi_visualiser/screens/settings_screen.dart';
 import '../models/city.dart';
 import '../providers/city_provider.dart';
 import '../theme/app_theme.dart';
@@ -19,7 +20,10 @@ class _CityListScreenState extends State<CityListScreen> {
   bool _sheetOpen = false;
 
   Future<void> _onCityTap(
-      BuildContext context, CityProvider provider, City city) async {
+    BuildContext context,
+    CityProvider provider,
+    City city,
+  ) async {
     // If already loading, ignore
     if (provider.isLoading) return;
 
@@ -117,8 +121,7 @@ class _CityListScreenState extends State<CityListScreen> {
               padding: const EdgeInsets.only(bottom: 24),
               itemBuilder: (context, index) {
                 final city = cities[index];
-                final isSelected =
-                    provider.selectedCity?.name == city.name;
+                final isSelected = provider.selectedCity?.name == city.name;
                 return CityCard(
                   city: city,
                   isSelected: isSelected,
@@ -162,6 +165,13 @@ class _CityListScreenState extends State<CityListScreen> {
         ],
       ),
       actions: [
+        IconButton(
+          icon: const Icon(Icons.settings),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SettingsScreen()),
+          ),
+        ),
         // LG Connection status pill
         _LgStatusPill(isConnected: provider.isConnected),
         const SizedBox(width: 16),
@@ -182,8 +192,7 @@ class _LgStatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isConnected ? AppColors.connected : AppColors.disconnected;
+    final color = isConnected ? AppColors.connected : AppColors.disconnected;
     final label = isConnected ? 'LG Connected' : 'LG Offline';
 
     return Container(
@@ -230,8 +239,11 @@ class _ErrorBanner extends StatelessWidget {
       color: AppColors.moderate.withValues(alpha: 0.10),
       child: Row(
         children: [
-          const Icon(Icons.info_outline_rounded,
-              size: 14, color: AppColors.moderate),
+          const Icon(
+            Icons.info_outline_rounded,
+            size: 14,
+            color: AppColors.moderate,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
