@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uhi_visualiser/services/geocoding_service.dart';
+import 'package:uhi_visualiser/services/weather_service.dart';
 import '../models/city.dart';
 import '../models/lg_settings.dart';
 import '../services/gemini_service.dart';
@@ -14,6 +15,7 @@ class CityProvider extends ChangeNotifier {
   final TTSService _tts = TTSService();
   final SettingsService _settingsService = SettingsService();
   final GeocodingService _geocoding = GeocodingService();
+  final WeatherService _weather = WeatherService();
 
   LGService? lgService;
   LgSettings? currentSettings;
@@ -27,6 +29,9 @@ class CityProvider extends ChangeNotifier {
   String? errorMessage;
   List<City> searchResults = [];
   bool isSearching = false;
+  double currentUHIDelta = 4.0;
+
+  String get getUHIDelta => '+${currentUHIDelta.toStringAsFixed(1)} °C';
 
   CityProvider(String apiKey) : _gemini = GeminiService(apiKey) {
     _initLgService();
@@ -71,6 +76,15 @@ class CityProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final parallelResults = await Future.wait([
+        _gemini.getCityHeatStory(city.name),
+        _weather.getUHIDelta(city.lat, city.lon),
+      ]);
+
+      heatStory = parallelResults[0] as String;
+      currentUHIDelta = parallelResults[1] as double;
+      kmlPath = await _kml.saveKML(city, uhiDelta: currentUHIDelta);
+
       final results = await Future.wait([
         _kml.saveKML(city),
         _gemini.getCityHeatStory(city.name),

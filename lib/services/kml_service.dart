@@ -4,10 +4,11 @@ import 'package:path_provider/path_provider.dart';
 import '../models/city.dart';
 
 class KMLService {
-  String generateHeatmapKML(City city) {
+  String generateHeatmapKML(City city, {double uhiDelta = 4.0}) {
     final lat = city.lat;
     final lon = city.lon;
     final name = city.name;
+    final zones = zonesFromDelta(uhiDelta);
 
     // Generate circle coordinates
     String circle(
@@ -58,7 +59,7 @@ class KMLService {
       <Polygon>
         <outerBoundaryIs>
           <LinearRing>
-            <coordinates>${circle(lat, lon, 0.06, 36)}</coordinates>
+            <coordinates>${circle(lat, lon, zones[0], 36)}</coordinates>
           </LinearRing>
         </outerBoundaryIs>
       </Polygon>
@@ -71,12 +72,12 @@ class KMLService {
       <Polygon>
         <outerBoundaryIs>
           <LinearRing>
-            <coordinates>${circle(lat, lon, 0.12, 36)}</coordinates>
+            <coordinates>${circle(lat, lon, zones[1], 36)}</coordinates>
           </LinearRing>
         </outerBoundaryIs>
         <innerBoundaryIs>
           <LinearRing>
-            <coordinates>${circle(lat, lon, 0.06, 36)}</coordinates>
+            <coordinates>${circle(lat, lon, zones[0], 36)}</coordinates>
           </LinearRing>
         </innerBoundaryIs>
       </Polygon>
@@ -89,12 +90,12 @@ class KMLService {
       <Polygon>
         <outerBoundaryIs>
           <LinearRing>
-            <coordinates>${circle(lat, lon, 0.19, 36)}</coordinates>
+            <coordinates>${circle(lat, lon, zones[2], 36)}</coordinates>
           </LinearRing>
         </outerBoundaryIs>
         <innerBoundaryIs>
           <LinearRing>
-            <coordinates>${circle(lat, lon, 0.12, 36)}</coordinates>
+            <coordinates>${circle(lat, lon, zones[1], 36)}</coordinates>
           </LinearRing>
         </innerBoundaryIs>
       </Polygon>
@@ -107,12 +108,12 @@ class KMLService {
       <Polygon>
         <outerBoundaryIs>
           <LinearRing>
-            <coordinates>${circle(lat, lon, 0.28, 36)}</coordinates>
+            <coordinates>${circle(lat, lon, zones[3], 36)}</coordinates>
           </LinearRing>
         </outerBoundaryIs>
         <innerBoundaryIs>
           <LinearRing>
-            <coordinates>${circle(lat, lon, 0.19, 36)}</coordinates>
+            <coordinates>${circle(lat, lon, zones[2], 36)}</coordinates>
           </LinearRing>
         </innerBoundaryIs>
       </Polygon>
@@ -122,11 +123,16 @@ class KMLService {
 </kml>''';
   }
 
-  Future<String> saveKML(City city) async {
-    final kml = generateHeatmapKML(city);
+  Future<String> saveKML(City city, {double uhiDelta = 4.0}) async {
+    final kml = generateHeatmapKML(city, uhiDelta: uhiDelta);
     final dir = await getApplicationDocumentsDirectory();
     final file = File('${dir.path}/uhi_${city.name}.kml');
     await file.writeAsString(kml);
     return file.path;
+  }
+
+  List<double> zonesFromDelta(double delta) {
+    final scale = (delta / 4.0).clamp(0.5, 2.0);
+    return [0.06 * scale, 0.12 * scale, 0.19 * scale, 0.28 * scale];
   }
 }
