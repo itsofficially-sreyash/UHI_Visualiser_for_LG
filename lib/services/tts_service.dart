@@ -18,10 +18,29 @@ class TTSService {
     }
   }
 
+  void setStartHandler(VoidCallback handler) {
+    _tts?.setStartHandler(handler);
+  }
+
+  void setCompletionHandler(VoidCallback handler) {
+    _tts?.setCompletionHandler(handler);
+  }
+
+  void setCancelHandler(VoidCallback handler) {
+    _tts?.setCancelHandler(handler);
+  }
+
+  void setPauseHandler(VoidCallback handler) {
+    _tts?.setPauseHandler(handler);
+  }
+
   Future<void> speak(String text) async {
     if (_tts == null) return;
-    await _tts!.stop();
     await _tts!.speak(text);
+  }
+
+  Future<void> pause() async {
+    await _tts?.pause();
   }
 
   Future<void> stop() async {

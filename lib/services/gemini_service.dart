@@ -37,7 +37,7 @@ Keep it conversational, impactful, not technical.
       requestBody,
     );
 
-    // 2. Fall back automatically if Primary returns 429 (Quota Exceeded) or 503 (Overloaded)
+    // // 2. Fall back automatically if Primary returns 429 (Quota Exceeded) or 503 (Overloaded)
     if (responseText == null) {
       debugPrint(
         'Primary model unavailable or quota exhausted. Switching to fallback model...',
@@ -47,7 +47,7 @@ Keep it conversational, impactful, not technical.
 
     // 3. Absolute safety net if both free tiers fail
     if (responseText == null) {
-      return 'The dense urban core of $cityName is trapping significantly more heat than its greener outskirts. Trapped by heavy concrete and asphalt, this lack of natural cooling drives up temperatures and spikes local energy demands. For residents, this means stifling nights and dangerous daytime heat exposure.';
+    return 'The dense urban core of $cityName is trapping significantly more heat than its greener outskirts. Trapped by heavy concrete and asphalt, this lack of natural cooling drives up temperatures and spikes local energy demands. For residents, this means stifling nights and dangerous daytime heat exposure.';
     }
 
     return responseText;

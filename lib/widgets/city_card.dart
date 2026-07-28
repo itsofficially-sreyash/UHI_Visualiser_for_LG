@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../models/city.dart';
 import '../theme/app_theme.dart';
 
 /// Heat severity metadata computed per-city.
 class HeatInfo {
-  final String deltaLabel;  
-  final String severityLabel; 
+  final String deltaLabel;
+  final String severityLabel;
   final Color color;
 
   const HeatInfo({
@@ -20,17 +19,41 @@ class HeatInfo {
 HeatInfo heatInfoFor(String cityName) {
   switch (cityName) {
     case 'Delhi':
-      return const HeatInfo(deltaLabel: '+6°C', severityLabel: 'Critical', color: AppColors.critical);
+      return const HeatInfo(
+        deltaLabel: '+6°C',
+        severityLabel: 'Critical',
+        color: AppColors.critical,
+      );
     case 'Chennai':
-      return const HeatInfo(deltaLabel: '+5°C', severityLabel: 'Severe', color: AppColors.severe);
+      return const HeatInfo(
+        deltaLabel: '+5°C',
+        severityLabel: 'Severe',
+        color: AppColors.severe,
+      );
     case 'Mumbai':
-      return const HeatInfo(deltaLabel: '+4°C', severityLabel: 'High', color: AppColors.high);
+      return const HeatInfo(
+        deltaLabel: '+4°C',
+        severityLabel: 'High',
+        color: AppColors.high,
+      );
     case 'Pune':
-      return const HeatInfo(deltaLabel: '+3°C', severityLabel: 'Moderate', color: AppColors.moderate);
+      return const HeatInfo(
+        deltaLabel: '+3°C',
+        severityLabel: 'Moderate',
+        color: AppColors.moderate,
+      );
     case 'Bangalore':
-      return const HeatInfo(deltaLabel: '+2°C', severityLabel: 'Elevated', color: AppColors.elevated);
+      return const HeatInfo(
+        deltaLabel: '+2°C',
+        severityLabel: 'Elevated',
+        color: AppColors.elevated,
+      );
     default:
-      return const HeatInfo(deltaLabel: '+?°C', severityLabel: 'Unknown', color: AppColors.onSurfaceMuted);
+      return const HeatInfo(
+        deltaLabel: '+?°C',
+        severityLabel: 'Unknown',
+        color: AppColors.onSurfaceMuted,
+      );
   }
 }
 
@@ -39,6 +62,7 @@ class CityCard extends StatefulWidget {
   final bool isSelected;
   final bool isLoading;
   final VoidCallback onTap;
+  final double? realDelta;
 
   const CityCard({
     super.key,
@@ -46,6 +70,7 @@ class CityCard extends StatefulWidget {
     required this.isSelected,
     required this.isLoading,
     required this.onTap,
+    this.realDelta,
   });
 
   @override
@@ -103,7 +128,10 @@ class _CityCardState extends State<CityCard> {
             children: [
               // Main content
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 child: Row(
                   children: [
                     // Thermometer icon with severity colour
@@ -129,7 +157,7 @@ class _CityCardState extends State<CityCard> {
                         children: [
                           Text(
                             widget.city.name,
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: AppColors.onSurface,
@@ -138,7 +166,7 @@ class _CityCardState extends State<CityCard> {
                           const SizedBox(height: 3),
                           Text(
                             '${heat.severityLabel} heat island',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w400,
                               color: AppColors.onSurfaceMuted,
@@ -151,14 +179,18 @@ class _CityCardState extends State<CityCard> {
                     // Delta badge
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: heat.color.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        heat.deltaLabel,
-                        style: GoogleFonts.inter(
+                        widget.realDelta != null
+                            ? '+${widget.realDelta!.toStringAsFixed(1)}°C'
+                            : heat.deltaLabel,
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: heat.color,

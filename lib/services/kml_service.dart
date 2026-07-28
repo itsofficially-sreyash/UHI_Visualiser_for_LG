@@ -4,10 +4,11 @@ import 'package:path_provider/path_provider.dart';
 import '../models/city.dart';
 
 class KMLService {
-  String generateHeatmapKML(City city) {
+  String generateHeatmapKML(City city, {double uhiDelta = 4.0}) {
     final lat = city.lat;
     final lon = city.lon;
     final name = city.name;
+    final zones = zonesFromDelta(uhiDelta);
 
     // Generate circle coordinates
     String circle(
@@ -58,7 +59,7 @@ class KMLService {
       <Polygon>
         <outerBoundaryIs>
           <LinearRing>
-            <coordinates>${circle(lat, lon, 0.06, 36)}</coordinates>
+            <coordinates>${circle(lat, lon, zones[0], 36)}</coordinates>
           </LinearRing>
         </outerBoundaryIs>
       </Polygon>
@@ -71,12 +72,12 @@ class KMLService {
       <Polygon>
         <outerBoundaryIs>
           <LinearRing>
-            <coordinates>${circle(lat, lon, 0.12, 36)}</coordinates>
+            <coordinates>${circle(lat, lon, zones[1], 36)}</coordinates>
           </LinearRing>
         </outerBoundaryIs>
         <innerBoundaryIs>
           <LinearRing>
-            <coordinates>${circle(lat, lon, 0.06, 36)}</coordinates>
+            <coordinates>${circle(lat, lon, zones[0], 36)}</coordinates>
           </LinearRing>
         </innerBoundaryIs>
       </Polygon>
@@ -89,12 +90,12 @@ class KMLService {
       <Polygon>
         <outerBoundaryIs>
           <LinearRing>
-            <coordinates>${circle(lat, lon, 0.19, 36)}</coordinates>
+            <coordinates>${circle(lat, lon, zones[2], 36)}</coordinates>
           </LinearRing>
         </outerBoundaryIs>
         <innerBoundaryIs>
           <LinearRing>
-            <coordinates>${circle(lat, lon, 0.12, 36)}</coordinates>
+            <coordinates>${circle(lat, lon, zones[1], 36)}</coordinates>
           </LinearRing>
         </innerBoundaryIs>
       </Polygon>
@@ -107,12 +108,12 @@ class KMLService {
       <Polygon>
         <outerBoundaryIs>
           <LinearRing>
-            <coordinates>${circle(lat, lon, 0.28, 36)}</coordinates>
+            <coordinates>${circle(lat, lon, zones[3], 36)}</coordinates>
           </LinearRing>
         </outerBoundaryIs>
         <innerBoundaryIs>
           <LinearRing>
-            <coordinates>${circle(lat, lon, 0.19, 36)}</coordinates>
+            <coordinates>${circle(lat, lon, zones[2], 36)}</coordinates>
           </LinearRing>
         </innerBoundaryIs>
       </Polygon>
@@ -122,11 +123,59 @@ class KMLService {
 </kml>''';
   }
 
-  Future<String> saveKML(City city) async {
-    final kml = generateHeatmapKML(city);
+  Future<String> saveKML(City city, {double uhiDelta = 4.0}) async {
+    final kml = generateHeatmapKML(city, uhiDelta: uhiDelta);
     final dir = await getApplicationDocumentsDirectory();
     final file = File('${dir.path}/uhi_${city.name}.kml');
     await file.writeAsString(kml);
     return file.path;
+  }
+
+  List<double> zonesFromDelta(double delta) {
+    final scale = (delta / 4.0).clamp(0.5, 2.0);
+    return [0.06 * scale, 0.12 * scale, 0.19 * scale, 0.28 * scale];
+  }
+
+  String generateLegendKML() {
+    return '''<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>UHI Legend</name>
+    <ScreenOverlay>
+      <name>Heat Zone Legend</name>
+      <Icon>
+        <href>https://i.imgur.com/0000000.png</href>
+      </Icon>
+      <overlayXY x="0" y="1" xunits="fraction" yunits="fraction"/>
+      <screenXY x="0.01" y="0.99" xunits="fraction" yunits="fraction"/>
+      <size x="200" y="100" xunits="pixels" yunits="pixels"/>
+    </ScreenOverlay>
+    <Placemark>
+      <name>🔴 Hot Core — City Center</name>
+      <description>Peak urban temperature zone</description>
+      <Point><coordinates>0,0,0</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>🟠 Warm Zone — Inner Suburbs</name>
+      <description>Elevated heat from dense urban fabric</description>
+      <Point><coordinates>0,0,0</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>🟣 Moderate Zone — Outer Suburbs</name>
+      <description>Transitional heat gradient</description>
+      <Point><coordinates>0,0,0</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>🟢 Cool Ring — Rural Edge</name>
+      <description>Baseline temperature reference</description>
+      <Point><coordinates>0,0,0</coordinates></Point>
+    </Placemark>
+  </Document>
+</kml>''';
+  }
+
+  Future<void> sendLegendKML(dynamic lgService) async {
+    final kml = generateLegendKML();
+    await lgService.sendKML(kml);
   }
 }

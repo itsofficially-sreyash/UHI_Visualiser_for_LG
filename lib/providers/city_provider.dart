@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uhi_visualiser/services/geocoding_service.dart';
+import 'package:uhi_visualiser/services/weather_service.dart';
 import '../models/city.dart';
 import '../models/lg_settings.dart';
 import '../services/gemini_service.dart';
@@ -8,12 +9,15 @@ import '../services/lg_service.dart';
 import '../services/settings_service.dart';
 import '../services/tts_service.dart';
 
+enum PlaybackState { idle, playing, paused, completed, stopped }
+
 class CityProvider extends ChangeNotifier {
   final GeminiService _gemini;
   final KMLService _kml = KMLService();
   final TTSService _tts = TTSService();
   final SettingsService _settingsService = SettingsService();
   final GeocodingService _geocoding = GeocodingService();
+  final WeatherService _weather = WeatherService();
 
   LGService? lgService;
   LgSettings? currentSettings;
@@ -23,13 +27,37 @@ class CityProvider extends ChangeNotifier {
   String kmlPath = '';
   bool isLoading = false;
   bool isConnected = false;
-  bool isSpeaking = false;
+  PlaybackState playbackState = PlaybackState.idle;
+  bool get isSpeaking => playbackState == PlaybackState.playing;
   String? errorMessage;
   List<City> searchResults = [];
   bool isSearching = false;
+  double currentUHIDelta = 4.0;
+
+  String get getUHIDelta => '+${currentUHIDelta.toStringAsFixed(1)} °C';
 
   CityProvider(String apiKey) : _gemini = GeminiService(apiKey) {
     _initLgService();
+    _initTtsHandlers();
+  }
+
+  void _initTtsHandlers() {
+    _tts.setStartHandler(() {
+      playbackState = PlaybackState.playing;
+      notifyListeners();
+    });
+    _tts.setCompletionHandler(() {
+      playbackState = PlaybackState.completed;
+      notifyListeners();
+    });
+    _tts.setCancelHandler(() {
+      playbackState = PlaybackState.stopped;
+      notifyListeners();
+    });
+    _tts.setPauseHandler(() {
+      playbackState = PlaybackState.paused;
+      notifyListeners();
+    });
   }
 
   Future<void> _initLgService() async {
@@ -52,9 +80,8 @@ class CityProvider extends ChangeNotifier {
   Future<void> selectCity(City city) async {
     if (lgService == null) return;
 
-    if (isSpeaking) {
-      await _tts.stop();
-      isSpeaking = false;
+    if (playbackState == PlaybackState.playing || playbackState == PlaybackState.paused) {
+      await stopNarration();
     }
 
     selectedCity = city;
@@ -66,11 +93,20 @@ class CityProvider extends ChangeNotifier {
     final connected = await lgService!.connect();
     isConnected = connected;
     if (!connected) {
-      errorMessage = 'LG rig not reachable — narration only mode.';
+      errorMessage = 'LG rig not reachable - narration only mode.';
     }
     notifyListeners();
 
     try {
+      final parallelResults = await Future.wait([
+        _gemini.getCityHeatStory(city.name),
+        _weather.getUHIDelta(city.lat, city.lon),
+      ]);
+
+      heatStory = parallelResults[0] as String;
+      currentUHIDelta = parallelResults[1] as double;
+      kmlPath = await _kml.saveKML(city, uhiDelta: currentUHIDelta);
+
       final results = await Future.wait([
         _kml.saveKML(city),
         _gemini.getCityHeatStory(city.name),
@@ -85,7 +121,7 @@ class CityProvider extends ChangeNotifier {
     isLoading = false;
     notifyListeners();
 
-    if (connected && heatStory.isNotEmpty) {
+    if (heatStory.isNotEmpty) {
       try {
         final kmlContent = _kml.generateHeatmapKML(city);
         await lgService!.sendKML(kmlContent);
@@ -96,18 +132,23 @@ class CityProvider extends ChangeNotifier {
       }
     }
 
+    playbackState = PlaybackState.idle;
+    notifyListeners();
+  }
+
+  Future<void> playNarration() async {
     if (heatStory.isNotEmpty) {
-      isSpeaking = true;
-      notifyListeners();
       await _tts.speak(heatStory);
-      isSpeaking = false;
-      notifyListeners();
     }
+  }
+
+  Future<void> pauseNarration() async {
+    await _tts.pause();
   }
 
   Future<void> stopNarration() async {
     await _tts.stop();
-    isSpeaking = false;
+    playbackState = PlaybackState.stopped;
     notifyListeners();
   }
 

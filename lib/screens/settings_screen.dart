@@ -66,7 +66,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     setState(() {
       _isTesting = false;
-      _connectionStatus = connected ? 'Connected successfully!' : 'Connection failed. Check credentials.';
+      _connectionStatus = connected
+          ? 'Connected successfully!'
+          : 'Connection failed. Check credentials.';
     });
   }
 
@@ -83,9 +85,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('LG Settings'),
-      ),
+      appBar: AppBar(title: const Text('LG Settings')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(
@@ -134,8 +134,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.person),
                 ),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Username is required' : null,
+                validator: (v) => v == null || v.trim().isEmpty
+                    ? 'Username is required'
+                    : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -146,9 +147,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   border: const OutlineInputBorder(),
                   prefixIcon: const Icon(Icons.lock),
                   suffixIcon: IconButton(
-                    icon: Icon(_obscurePassword
-                        ? Icons.visibility
-                        : Icons.visibility_off),
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
                     onPressed: () =>
                         setState(() => _obscurePassword = !_obscurePassword),
                   ),
@@ -184,7 +187,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.cable),
-                  label: Text(_isTesting ? 'Testing...' : 'Save & Test Connection'),
+                  label: Text(
+                    _isTesting ? 'Testing...' : 'Save & Test Connection',
+                  ),
                 ),
               ),
               if (_connectionStatus != null) ...[
