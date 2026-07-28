@@ -135,4 +135,47 @@ class KMLService {
     final scale = (delta / 4.0).clamp(0.5, 2.0);
     return [0.06 * scale, 0.12 * scale, 0.19 * scale, 0.28 * scale];
   }
+
+  String generateLegendKML() {
+    return '''<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>UHI Legend</name>
+    <ScreenOverlay>
+      <name>Heat Zone Legend</name>
+      <Icon>
+        <href>https://i.imgur.com/0000000.png</href>
+      </Icon>
+      <overlayXY x="0" y="1" xunits="fraction" yunits="fraction"/>
+      <screenXY x="0.01" y="0.99" xunits="fraction" yunits="fraction"/>
+      <size x="200" y="100" xunits="pixels" yunits="pixels"/>
+    </ScreenOverlay>
+    <Placemark>
+      <name>🔴 Hot Core — City Center</name>
+      <description>Peak urban temperature zone</description>
+      <Point><coordinates>0,0,0</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>🟠 Warm Zone — Inner Suburbs</name>
+      <description>Elevated heat from dense urban fabric</description>
+      <Point><coordinates>0,0,0</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>🟣 Moderate Zone — Outer Suburbs</name>
+      <description>Transitional heat gradient</description>
+      <Point><coordinates>0,0,0</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>🟢 Cool Ring — Rural Edge</name>
+      <description>Baseline temperature reference</description>
+      <Point><coordinates>0,0,0</coordinates></Point>
+    </Placemark>
+  </Document>
+</kml>''';
+  }
+
+  Future<void> sendLegendKML(dynamic lgService) async {
+    final kml = generateLegendKML();
+    await lgService.sendKML(kml);
+  }
 }

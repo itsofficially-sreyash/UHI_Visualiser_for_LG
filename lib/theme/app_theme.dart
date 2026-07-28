@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Central colour tokens for the entire app.
 class AppColors {
@@ -46,41 +45,41 @@ class AppTheme {
         surfaceContainerHighest: AppColors.surfaceVariant,
         error: AppColors.critical,
       ),
-      textTheme: GoogleFonts.interTextTheme(base.textTheme).copyWith(
-        displayLarge: GoogleFonts.inter(
+      textTheme: base.textTheme.copyWith(
+        displayLarge: TextStyle(
           fontSize: 32,
           fontWeight: FontWeight.w700,
           color: AppColors.onSurface,
           letterSpacing: -0.5,
         ),
-        headlineMedium: GoogleFonts.inter(
+        headlineMedium: TextStyle(
           fontSize: 22,
           fontWeight: FontWeight.w600,
           color: AppColors.onSurface,
         ),
-        titleLarge: GoogleFonts.inter(
+        titleLarge: TextStyle(
           fontSize: 17,
           fontWeight: FontWeight.w600,
           color: AppColors.onSurface,
         ),
-        titleMedium: GoogleFonts.inter(
+        titleMedium: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w500,
           color: AppColors.onSurface,
         ),
-        bodyLarge: GoogleFonts.inter(
+        bodyLarge: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w400,
           color: AppColors.onSurface,
           height: 1.65,
         ),
-        bodyMedium: GoogleFonts.inter(
+        bodyMedium: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w400,
           color: AppColors.onSurfaceMuted,
           height: 1.5,
         ),
-        labelSmall: GoogleFonts.inter(
+        labelSmall: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w500,
           color: AppColors.onSurfaceMuted,
@@ -94,7 +93,7 @@ class AppTheme {
         centerTitle: false,
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w700,
           color: AppColors.onSurface,
@@ -116,7 +115,7 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.surfaceVariant,
-        contentTextStyle: GoogleFonts.inter(
+        contentTextStyle: TextStyle(
           fontSize: 13,
           color: AppColors.onSurface,
         ),

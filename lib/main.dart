@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uhi_visualiser/constants/env.dart';
+import 'package:uhi_visualiser/screens/home_screen.dart';
+import 'package:uhi_visualiser/screens/onboarding_screen.dart';
 import 'providers/city_provider.dart';
-import 'screens/city_list_screen.dart';
-import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,11 +14,16 @@ void main() async {
   } catch (e) {
     debugPrint('No .env file found; continuing without env vars.');
   }
-  runApp(const MyApp());
+
+  final prefs = await SharedPreferences.getInstance();
+  final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
+
+  runApp(MyApp(showOnboarding: !hasSeenOnboarding));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool showOnboarding;
+  const MyApp({super.key, required this.showOnboarding});
 
   static final apiKey = Env.geminiApiKey;
 
@@ -28,8 +34,11 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'UHI Visualizer',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.dark(),
-        home: const CityListScreen(),
+        theme: ThemeData(
+          useMaterial3: true,
+          fontFamily: 'Roboto',
+        ),
+        home: showOnboarding ? const OnboardingScreen() : const HomeScreen(),
       ),
     );
   }

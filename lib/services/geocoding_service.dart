@@ -28,6 +28,6 @@ class GeocodingService {
             lon: double.parse(e['lon']),
           ),
         )
-        .toList();
+        .toList().sublist(0,3);
   }
 }
