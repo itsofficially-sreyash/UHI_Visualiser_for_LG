@@ -50,5 +50,4 @@ app.*.map.json
 .w
 .continue
 s.json
-lib/screens/narration_panel.dart
-lib/screens/city_list_screen.dart
+skills
