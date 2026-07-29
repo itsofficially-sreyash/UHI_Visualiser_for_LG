@@ -55,7 +55,7 @@
 The Urban Heat Island effect makes Indian city cores 3-7°C hotter than their surroundings — a consequence of concrete replacing green cover at scale. Delhi, Mumbai, Pune, Bangalore, Chennai are all affected. The satellite data exists. But nobody has visualized it at this scale, with this kind of narrative layer.
 
 - **Tap a city** — Flutter app sends a KML heatmap to the LG rig via SSH
-- **Watch the heat** — concentric thermal zones render across all LG screens on Google Earth
+- **Watch the heat** — concentric thermal zones render across all LG screens on Google Earth (using real-time Open-Meteo weather data)
 - **Hear the story** — Gemini AI narrates that city's specific heat situation using real climate context, delivered via text-to-speech
 
 > The goal: make climate data feel human. Not a chart. A story on a wall of screens.
@@ -122,7 +122,7 @@ The Urban Heat Island effect makes Indian city cores 3-7°C hotter than their su
 
 <div align="center">
 
-`Progress ████████░░░░░░░░░░░░░░░░░░░░░░░░  Month 1 of 3  (June in progress)`
+`Progress ████████████████████████░░░░░░░░  Month 2 of 3  (July in progress)`
 
 </div>
 
@@ -131,8 +131,8 @@ The Urban Heat Island effect makes Indian city cores 3-7°C hotter than their su
 | | Month | Focus | Deliverables |
 |:---:|:---:|:---|:---|
 | ✅ | **June** | **Core Pipeline** | Flutter app · SSH to LG · KML heatmap generation · Gemini narration · TTS · Virtual LG cluster (3 VMs) · Google Earth rendering confirmed |
-| 🔄 | **July** | **Data + Polish** | MODIS satellite data integration · real temperature variance per city · UI polish · camera FlyTo · expand to 10 cities |
-| 🔜 | **August** | **Demo + Docs** | Real LG rig testing · YouTube demo · full documentation · open source release |
+| ✅ | **July** | **Data + Polish** | Real-time weather data API integration · UHI Delta calculation · dynamic App Settings · modular UI components · polished Onboarding and Narration experiences |
+| 🔜 | **August** | **Demo + Docs** | Expand to 10 cities · Real LG rig testing · YouTube demo · full documentation · open source release |
 
 <br/>
 
@@ -144,18 +144,26 @@ The Urban Heat Island effect makes Indian city cores 3-7°C hotter than their su
 uhi_visualizer/
 │
 ├── lib/
-│   ├── main.dart                        ← App entry, Provider setup
+│   ├── main.dart                        ← App entry, Env & Provider setup
+│   ├── constants/                       ← App colors, text styles, and env configs
 │   ├── models/
-│   │   └── city.dart                    ← City model + kCities list (5 Indian cities)
+│   │   ├── city.dart                    ← City model + kCities list
+│   │   └── lg_settings.dart             ← LG Connection configuration model
 │   ├── services/
 │   │   ├── kml_service.dart             ← KML generator (4-zone concentric circles)
 │   │   ├── gemini_service.dart          ← Gemini 1.5 Flash API narration
 │   │   ├── tts_service.dart             ← flutter_tts voice narration
-│   │   └── lg_service.dart              ← dartssh2 SSH: connect, sendKML, flyTo, clear
+│   │   ├── lg_service.dart              ← dartssh2 SSH: connect, sendKML, flyTo, clear
+│   │   ├── weather_service.dart         ← Open-Meteo API for real-time temps and UHI delta
+│   │   ├── geocoding_service.dart       ← Translates cities to lat/lon coordinates
+│   │   └── settings_service.dart        ← SharedPreferences for LG configuration
 │   ├── providers/
 │   │   └── city_provider.dart           ← ChangeNotifier: state + orchestration
 │   └── screens/
-│       └── city_list_screen.dart        ← Main UI: city list + narration panel
+│       ├── onboarding_screen.dart       ← First-time user setup & intro
+│       ├── home_screen.dart             ← Main dashboard: select and search cities
+│       ├── narration_screen.dart        ← Displays AI heat story with TTS playback
+│       └── settings_screen.dart         ← UI for updating LG Rig connection info
 │
 └── test/
     └── widget_test.dart
@@ -171,13 +179,14 @@ uhi_visualizer/
 
 | Layer | Technology | What it does |
 |:---:|:---:|:---|
-| ![Flutter](https://img.shields.io/badge/-Flutter-02569B?logo=flutter&logoColor=white) | **Flutter 3.x + Dart 3.x** | Cross-platform mobile controller app |
-| ![SSH](https://img.shields.io/badge/-dartssh2-4A90D9?logo=gnubash&logoColor=white) | **dartssh2 ^4.0** | Pure-Dart SSH2 — connects Flutter to LG master node |
+| ![Flutter](https://img.shields.io/badge/-Flutter-02569B?logo=flutter&logoColor=white) | **Flutter 3.x + Dart 3.x** | Cross-platform mobile controller app (Material 3) |
+| ![SSH](https://img.shields.io/badge/-dartssh2-4A90D9?logo=gnubash&logoColor=white) | **dartssh2 ^2.17.1** | Pure-Dart SSH2 — connects Flutter to LG master node |
 | ![KML](https://img.shields.io/badge/-KML-34A853?logo=googlemaps&logoColor=white) | **Custom KML Builder** | Generates concentric circle heatmap polygons per city |
 | ![Gemini](https://img.shields.io/badge/-Gemini_API-4285F4?logo=google&logoColor=white) | **Gemini 1.5 Flash** | City-specific heat story generation with climate context |
-| ![TTS](https://img.shields.io/badge/-flutter__tts-FF6D00) | **flutter_tts ^4.0** | Voice narration — speaks Gemini's heat story aloud |
-| ![State](https://img.shields.io/badge/-Provider-00B4D8) | **Provider ^6.1** | Reactive state management |
-| ![Data](https://img.shields.io/badge/-MODIS_LST-0F9D58?logo=nasa&logoColor=white) | **Google Earth Engine** | *(July+)* MODIS Land Surface Temperature satellite data |
+| ![TTS](https://img.shields.io/badge/-flutter__tts-FF6D00) | **flutter_tts ^4.2.5** | Voice narration — speaks Gemini's heat story aloud |
+| ![State](https://img.shields.io/badge/-Provider-00B4D8) | **provider ^6.1.5** | Reactive state management |
+| ![Data](https://img.shields.io/badge/-Open--Meteo-0F9D58) | **Open-Meteo API** | Real-time temperature & Urban Heat Island (UHI) delta |
+| ![Storage](https://img.shields.io/badge/-Shared_Prefs-F4B400) | **shared_preferences** | Local persistence for user settings and LG config |
 
 </div>
 
@@ -190,7 +199,7 @@ uhi_visualizer/
 ### Prerequisites
 
 ```
-Flutter >= 3.16            flutter pub get     ✓
+Flutter >= 3.13            flutter pub get     ✓
 Android device / emulator                      ✓
 LG rig or virtual cluster  SSH port 22 open    ✓
 Gemini API key             aistudio.google.com ✓
@@ -206,31 +215,34 @@ flutter run          # Android device
 flutter run -d linux # Linux desktop
 ```
 
+### Environment Setup
+Create a `.env` file in the root of the project to securely store your API keys:
+```
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
 ### First Launch
 
 ```
-1. App opens with 5 Indian cities listed
-2. Tap any city (e.g. Pune)
-        SSH connects to LG master
-        KML heatmap generated and pushed to /var/www/html/kml/master.kml
-        Google Earth renders 4-zone concentric heatmap
-        Gemini generates city heat story
-        TTS narrates it automatically
-3. Tap another city to switch visualization
+1. App opens with a guided Onboarding Screen.
+2. Proceed to the Home Screen displaying Indian cities.
+3. Use the Settings gear icon to configure your LG Connection (IP, Port, Credentials).
+4. Tap any city (e.g., Pune):
+        - Live weather data is fetched.
+        - SSH connects to LG master.
+        - KML heatmap is generated and pushed to /var/www/html/kml/master.kml
+        - Google Earth renders the concentric heatmap.
+        - Gemini generates a city heat story and TTS narrates it automatically.
 ```
 
 ### LG Connection Setup
 
-Update in `lib/providers/city_provider.dart`:
-
-```dart
-LGService(
-  host: 'YOUR_LG_MASTER_IP',
-  port: 22,
-  username: 'lg',
-  password: 'your_password',
-)
-```
+You can configure the Liquid Galaxy rig directly within the app using the **Settings Screen**. It securely saves the connection info locally:
+- **Host**: Your LG Master IP
+- **Port**: Default 22
+- **Username**: e.g., `lg`
+- **Password**: Your LG Rig Password
+- **Screens**: Total number of active LG screens
 
 ### Virtual LG Cluster (local testing)
 
@@ -240,7 +252,7 @@ No physical rig? Set up a 3-VM virtual cluster:
 1. Install VirtualBox
 2. Create 3 Ubuntu VMs — LG1 (master, 2GB RAM), LG2 + LG3 (slaves, 1.5GB each)
 3. Follow: https://youtu.be/CLdUuDHo6lU
-4. Point app to LG1 master IP
+4. Point app to LG1 master IP in the in-app Settings.
 ```
 
 <br/>
@@ -255,7 +267,7 @@ No physical rig? Set up a 3-VM virtual cluster:
 │  (Android/Linux)│                         │  /var/www/html/kml/  │
 └─────────────────┘                         └──────────┬───────────┘
         │                                              │ NetworkLink
-        │ Gemini API                                   ▼
+        │ Gemini API / Open-Meteo                      ▼
         ▼                                   ┌──────────────────────┐
 ┌─────────────────┐                         │   Google Earth       │
 │  Heat Story     │                         │  Heatmap renders on  │
@@ -286,7 +298,7 @@ flutter test       # All tests passed
 ```
 
 New cities go in `lib/models/city.dart` → `kCities` list.
-New data sources go in `lib/services/kml_service.dart`.
+New data sources go in `lib/services/weather_service.dart`.
 LG commands go in `lib/services/lg_service.dart`.
 
 <br/>
@@ -303,7 +315,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 <div align="center">
 
-**Built with Flutter · dartssh2 · Gemini API · flutter_tts · Google Earth Engine**
+**Built with Flutter · dartssh2 · Gemini API · flutter_tts · Open-Meteo**
 
 <br/>
 
