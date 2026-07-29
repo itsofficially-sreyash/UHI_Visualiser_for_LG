@@ -98,21 +98,23 @@ class CityProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final parallelResults = await Future.wait([
-        _gemini.getCityHeatStory(city.name),
+      final weatherResults = await Future.wait([
         _weather.getUHIDelta(city.lat, city.lon),
+        _weather.getHistoricalTemperature(city.lat, city.lon, '1990'),
+        _weather.getHistoricalTemperature(city.lat, city.lon, '2023'),
       ]);
 
-      heatStory = parallelResults[0] as String;
-      currentUHIDelta = parallelResults[1] as double;
-      kmlPath = await _kml.saveKML(city, uhiDelta: currentUHIDelta);
+      currentUHIDelta = weatherResults[0] as double;
+      final pastTemp = weatherResults[1] as double?;
+      final currentTemp = weatherResults[2] as double?;
 
       final results = await Future.wait([
-        _kml.saveKML(city),
-        _gemini.getCityHeatStory(city.name),
+        _gemini.getCityHeatStory(city.name, pastTemp: pastTemp, currentTemp: currentTemp),
+        _kml.saveKML(city, uhiDelta: currentUHIDelta),
       ]);
-      kmlPath = results[0];
-      heatStory = results[1];
+
+      heatStory = results[0] as String;
+      kmlPath = results[1] as String;
     } catch (e) {
       errorMessage = 'Failed to load city data. Please try again.';
       heatStory = '';

@@ -9,15 +9,21 @@ class GeminiService {
 
   GeminiService(this._apiKey);
 
-  Future<String> getCityHeatStory(String cityName) async {
+  Future<String> getCityHeatStory(String cityName, {double? pastTemp, double? currentTemp}) async {
     const primaryModel = 'gemini-3.5-flash';
     const fallbackModel = 'gemini-2.5-flash';
+
+    String tempContext = '';
+    if (pastTemp != null && currentTemp != null) {
+      tempContext = 'The city had an average summer temperature of ${pastTemp.toStringAsFixed(1)}°C in 1990, and it is now ${currentTemp.toStringAsFixed(1)}°C today. Use these exact numbers to narrate the change story.';
+    }
 
     final prompt =
         '''
 You are a climate narrator for an interactive visualization app.
 In exactly 3-4 sentences, narrate the Urban Heat Island situation of $cityName, India.
 Include: how much hotter the city core is vs surroundings, main cause, and one human impact.
+$tempContext
 Keep it conversational, impactful, not technical.
 ''';
 
