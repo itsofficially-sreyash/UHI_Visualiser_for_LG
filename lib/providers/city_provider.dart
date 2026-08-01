@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:uhi_visualiser/services/geocoding_service.dart';
 import 'package:uhi_visualiser/services/weather_service.dart';
@@ -135,6 +136,37 @@ class CityProvider extends ChangeNotifier {
     }
 
     playbackState = PlaybackState.idle;
+    notifyListeners();
+  }
+
+  Future<void> simulateMitigation() async {
+    if (selectedCity == null || lgService == null) return;
+
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      final mitigation = await _gemini.getMitigationAction(selectedCity!.name);
+      final action = mitigation['action'] as String;
+      final coolingDelta = mitigation['coolingDelta'] as double;
+
+      heatStory = 'Mitigation Scenario: $action This would reduce the local temperature by ${coolingDelta.toStringAsFixed(1)}°C.';
+      
+      final newUhiDelta = max(0.0, currentUHIDelta - coolingDelta);
+      
+      final kmlContent = _kml.generateHeatmapKML(selectedCity!, uhiDelta: newUhiDelta);
+      await lgService!.sendKML(kmlContent);
+      debugPrint('Simulated KML pushed with delta \$newUhiDelta');
+      
+      if (playbackState == PlaybackState.playing) {
+        await stopNarration();
+        await playNarration();
+      }
+    } catch (e) {
+      debugPrint('Simulation failed: \$e');
+    }
+
+    isLoading = false;
     notifyListeners();
   }
 

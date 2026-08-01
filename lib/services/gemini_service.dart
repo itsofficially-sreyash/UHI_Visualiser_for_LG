@@ -59,6 +59,56 @@ Keep it conversational, impactful, not technical.
     return responseText;
   }
 
+  Future<Map<String, dynamic>> getMitigationAction(String cityName) async {
+    const primaryModel = 'gemini-3.5-flash';
+    const fallbackModel = 'gemini-2.5-flash';
+
+    final prompt =
+        '''
+Suggest one urban heat mitigation action for $cityName (like urban forest cover).
+State how much it would reduce the local temperature in °C.
+Output exactly in JSON format: {"action": "The 1-sentence action", "coolingDelta": 2.5}
+Do not include any markdown formatting or extra text.
+''';
+
+    final requestBody = jsonEncode({
+      'contents': [
+        {
+          'parts': [
+            {'text': prompt},
+          ],
+        },
+      ],
+      'generationConfig': {
+        'responseMimeType': 'application/json',
+      }
+    });
+
+    String? responseText = await _executeRequestWithRetry(primaryModel, requestBody);
+    if (responseText == null) {
+      responseText = await _executeRequestWithRetry(fallbackModel, requestBody);
+    }
+
+    if (responseText != null) {
+      try {
+        final data = jsonDecode(responseText);
+        return {
+          'action': data['action'] as String,
+          'coolingDelta': (data['coolingDelta'] as num).toDouble(),
+        };
+      } catch (e) {
+        debugPrint('Failed to parse Gemini mitigation JSON: $e');
+      }
+    }
+
+    final random = Random();
+    final randomDelta = 1.0 + random.nextDouble() * 2.0;
+    return {
+      'action': 'Adding strategic urban forest cover and green roofs across the city core could significantly reduce trapped heat.',
+      'coolingDelta': double.parse(randomDelta.toStringAsFixed(1)),
+    };
+  }
+
   Future<String?> _executeRequestWithRetry(String model, String body) async {
     const maxRetries = 2;
     final url = Uri.https(
