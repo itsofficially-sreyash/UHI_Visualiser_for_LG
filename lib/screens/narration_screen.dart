@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
 import '../providers/city_provider.dart';
 import '../widgets/narration/animated_waveform.dart';
@@ -12,7 +13,8 @@ class NarrationScreen extends StatefulWidget {
   State<NarrationScreen> createState() => _NarrationScreenState();
 }
 
-class _NarrationScreenState extends State<NarrationScreen> with SingleTickerProviderStateMixin {
+class _NarrationScreenState extends State<NarrationScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
@@ -23,7 +25,10 @@ class _NarrationScreenState extends State<NarrationScreen> with SingleTickerProv
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOut,
+    );
     _fadeController.forward();
   }
 
@@ -38,13 +43,13 @@ class _NarrationScreenState extends State<NarrationScreen> with SingleTickerProv
     final provider = context.watch<CityProvider>();
     final isPlaying = provider.playbackState == PlaybackState.playing;
     final city = provider.selectedCity;
-    
+
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {
-         if (didPop) {
-           provider.stopNarration();
-         }
+        if (didPop) {
+          provider.stopNarration();
+        }
       },
       child: Scaffold(
         backgroundColor: const Color(0xFFFAFAFA),
@@ -54,11 +59,18 @@ class _NarrationScreenState extends State<NarrationScreen> with SingleTickerProv
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 16.0,
+                  ),
                   child: Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back, size: 28, color: Color(0xFF111827)),
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          size: 28,
+                          color: Color(0xFF111827),
+                        ),
                         onPressed: () {
                           provider.stopNarration();
                           Navigator.of(context).pop();
@@ -92,20 +104,22 @@ class _NarrationScreenState extends State<NarrationScreen> with SingleTickerProv
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 AnimatedWaveform(isPlaying: isPlaying),
-                
+
                 const SizedBox(height: 32),
-                
+
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32.0),
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
                       child: Text(
-                        provider.heatStory.isNotEmpty ? provider.heatStory : 'No story available.',
+                        provider.heatStory.isNotEmpty
+                            ? provider.heatStory
+                            : 'No story available.',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w400,
@@ -117,9 +131,45 @@ class _NarrationScreenState extends State<NarrationScreen> with SingleTickerProv
                     ),
                   ),
                 ),
-                
+
                 const GeminiFooter(),
-                
+
+                if (provider.isLoading)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        color: const Color(0xFF10B981),
+                      ),
+                      child: LoadingAnimationWidget.progressiveDots(
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    ),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: ElevatedButton.icon(
+                      onPressed: () => provider.simulateMitigation(),
+                      icon: const Icon(Icons.auto_awesome),
+                      label: const Text('Simulate Mitigation'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                      ),
+                    ),
+                  ),
+
                 Padding(
                   padding: const EdgeInsets.only(bottom: 32.0),
                   child: PlaybackButton(
